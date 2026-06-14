@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gigal Prayer House — Diabetes Care Tracker</title>
+  <meta name="description" content="A personalized diabetes management dashboard with diet plans, exercise schedules, medication reminders, analytics and progress tracking." />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --brand: #1976d2;
+      --brand-2: #00bfa6;
+      --brand-grad: linear-gradient(135deg, #1976d2 0%, #00bfa6 100%);
+      --ok: #2e9e5b;
+      --warn: #f5a623;
+      --crit: #e53935;
+      --bg: #eef4fb;
+      --bg-2: #e3f2f1;
+      --text: #1a2733;
+      --muted: #5c6b7a;
+      --card: rgba(255,255,255,0.65);
+      --card-solid: #ffffff;
+      --border: rgba(255,255,255,0.6);
+      --shadow: 0 8px 30px rgba(25,118,210,0.12);
+      --glass-blur: blur(14px);
+      --sidebar: rgba(255,255,255,0.75);
+    }
+    [data-theme="dark"] {
+      --bg: #0c1320;
+      --bg-2: #0f1c2b;
+      --text: #e6edf5;
+      --muted: #9fb0c2;
+      --card: rgba(28,40,56,0.6);
+      --card-solid: #16212f;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 8px 30px rgba(0,0,0,0.45);
+      --sidebar: rgba(18,27,40,0.85);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 100% -10%, rgba(0,191,166,0.18), transparent),
+        radial-gradient(1000px 600px at -10% 110%, rgba(25,118,210,0.18), transparent),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      transition: background .4s ease, color .3s ease;
+    }
+
+    .glass {
+      background: var(--card);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand-text {
+      background: var(--brand-grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+    }
+    .btn-brand {
+      background: var(--brand-grad);
+      border: none; color: #fff; font-weight: 600;
+      box-shadow: 0 6px 18px rgba(0,191,166,0.35);
+    }
+    .btn-brand:hover { filter: brightness(1.05); color:#fff; transform: translateY(-1px); }
+    .text-muted-2 { color: var(--muted) !important; }
+
+    /* ---------- Auth ---------- */
+    #authScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .auth-card { width:100%; max-width:920px; overflow:hidden; }
+    .auth-hero {
+      background: var(--brand-grad); color:#fff; padding:42px 34px;
+      display:flex; flex-direction:column; justify-content:center;
+    }
+    .auth-hero h1 { font-weight:800; font-size:1.9rem; }
+    .auth-feature { display:flex; gap:12px; align-items:flex-start; margin-top:14px; opacity:.95; }
+    .auth-feature i { font-size:1.2rem; }
+    .form-control, .form-select { background: var(--card-solid); color:var(--text); border-radius:12px; }
+    [data-theme="dark"] .form-control, [data-theme="dark"] .form-select { border-color: var(--border); }
+    .form-control:focus, .form-select:focus { box-shadow:0 0 0 .2rem rgba(25,118,210,.25); border-color:var(--brand); }
+
+    /* ---------- App layout ---------- */
+    #appScreen { display:none; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar {
+      width:248px; flex-shrink:0; position:sticky; top:0; height:100vh;
+      background: var(--sidebar); backdrop-filter: var(--glass-blur);
+      border-right:1px solid var(--border); padding:18px 14px; overflow-y:auto;
+      transition: transform .3s ease; z-index:1040;
+    }
+    .nav-link-side {
+      display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px;
+      color:var(--text); text-decoration:none; font-weight:500; margin-bottom:4px; cursor:pointer;
+      transition: all .2s ease;
+    }
+    .nav-link-side i { font-size:1.15rem; width:22px; text-align:center; }
+    .nav-link-side:hover { background: rgba(25,118,210,.10); }
+    .nav-link-side.active { background: var(--brand-grad); color:#fff; box-shadow:0 6px 16px rgba(0,191,166,.3); }
+    .main { flex:1; min-width:0; padding:18px 22px 60px; }
+    .topbar { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+    .page { display:none; animation: fade .4s ease; }
+    .page.active { display:block; }
+    @keyframes fade { from {opacity:0; transform:translateY(8px);} to {opacity:1; transform:none;} }
+
+    /* ---------- Stat cards ---------- */
+    .stat-card { padding:18px; border-radius:18px; position:relative; overflow:hidden; height:100%; }
+    .stat-card .icon-badge {
+      width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+      font-size:1.35rem; color:#fff; margin-bottom:12px;
+    }
+    .stat-val { font-size:1.5rem; font-weight:800; line-height:1.1; }
+    .stat-label { color:var(--muted); font-size:.82rem; font-weight:500; }
+    .status-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .bg-ok{background:var(--ok)!important;} .bg-warn{background:var(--warn)!important;} .bg-crit{background:var(--crit)!important;}
+    .ring { color:var(--ok); }
+    .pill { padding:3px 10px; border-radius:20px; font-size:.74rem; font-weight:600; }
+    .pill-ok{background:rgba(46,158,91,.15); color:var(--ok);}
+    .pill-warn{background:rgba(245,166,35,.16); color:var(--warn);}
+    .pill-crit{background:rgba(229,57,53,.15); color:var(--crit);}
+
+    .section-title { font-weight:700; font-size:1.15rem; margin:6px 0 14px; display:flex; align-items:center; gap:8px; }
+    .meal-item, .ex-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--border); }
+    .meal-item:last-child, .ex-item:last-child { border-bottom:none; }
+    .chip { background:rgba(25,118,210,.10); color:var(--brand); padding:4px 10px; border-radius:20px; font-size:.78rem; margin:2px; display:inline-block; }
+    [data-theme="dark"] .chip { background: rgba(0,191,166,.16); color:#5fe6d2; }
+
+    .health-score-wrap { display:flex; align-items:center; justify-content:center; }
+    .score-circle {
+      width:150px; height:150px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background: conic-gradient(var(--ok) 0deg, var(--border) 0deg);
+      position:relative;
+    }
+    .score-circle::before { content:""; position:absolute; inset:12px; border-radius:50%; background:var(--card-solid); }
+    .score-inner { position:relative; text-align:center; }
+    .score-inner .num { font-size:2.2rem; font-weight:800; }
+
+    .roadmap-step { display:flex; gap:14px; padding-bottom:18px; position:relative; }
+    .roadmap-step:not(:last-child)::after { content:""; position:absolute; left:17px; top:38px; bottom:0; width:2px; background:var(--border); }
+    .roadmap-dot { width:36px; height:36px; border-radius:50%; background:var(--brand-grad); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; z-index:1; }
+
+    .alarm-row { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; margin-bottom:8px; background: rgba(25,118,210,.06); }
+    [data-theme="dark"] .alarm-row { background: rgba(255,255,255,.04); }
+    .alarm-time { font-weight:700; font-size:1.05rem; min-width:74px; }
+    .badge-ach { text-align:center; padding:16px 10px; border-radius:16px; opacity:.45; filter:grayscale(.6); transition:.3s; }
+    .badge-ach.earned { opacity:1; filter:none; box-shadow:var(--shadow); }
+    .badge-ach .emoji { font-size:2rem; }
+
+    .tip-card { background: var(--brand-grad); color:#fff; }
+    .emergency-banner { display:none; background: linear-gradient(135deg,#e53935,#b71c1c); color:#fff; border-radius:16px; padding:18px 20px; margin-bottom:18px; box-shadow:0 10px 30px rgba(229,57,53,.45); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 10px 30px rgba(229,57,53,.45);} 50%{box-shadow:0 10px 44px rgba(229,57,53,.75);} }
+
+    .disclaimer { font-size:.82rem; color:var(--muted); border-left:3px solid var(--warn); padding:10px 14px; background:rgba(245,166,35,.08); border-radius:8px; }
+
+    .menu-toggle { display:none; }
+    .overlay-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1035; }
+
+    @media (max-width: 991px) {
+      .sidebar { position:fixed; left:0; top:0; transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .menu-toggle { display:inline-flex; }
+      .overlay-bg.show { display:block; }
+      .main { padding:14px; }
+    }
+    canvas { max-width:100%; }
+    .form-switch .form-check-input { cursor:pointer; }
+    ::-webkit-scrollbar { width:9px; height:9px; }
+    ::-webkit-scrollbar-thumb { background:rgba(120,140,160,.4); border-radius:10px; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= AUTH SCREEN ================= -->
+  <div id="authScreen" style="flex-direction:column; gap:14px">
+    <div class="glass auth-card">
+      <div class="row g-0">
+        <div class="col-lg-5 auth-hero">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-heart-pulse-fill" style="font-size:2rem"></i>
+            <div>
+              <div style="font-size:1.05rem; font-weight:700; letter-spacing:.5px; opacity:.95">GIGAL PRAYER HOUSE</div>
+              <h1 class="m-0">Diabetes Care Tracker</h1>
+            </div>
+          </div>
+          <p class="mb-1" style="opacity:.92">Monitor, manage & reduce diabetes with personalized care.</p>
+          <div class="auth-feature"><i class="bi bi-clipboard2-pulse"></i><span>Smart diet & exercise plans</span></div>
+          <div class="auth-feature"><i class="bi bi-graph-up-arrow"></i><span>Track sugar, HbA1c & progress</span></div>
+          <div class="auth-feature"><i class="bi bi-alarm"></i><span>Medication & meal reminders</span></div>
+          <div class="auth-feature"><i class="bi bi-shield-check"></i><span>Health score & risk analysis</span></div>
+        </div>
+        <div class="col-lg-7 p-4 p-md-5" style="background:var(--card-solid)">
+          <!-- LOGIN -->
+          <div id="loginForm">
+            <h3 class="fw-bold mb-1">Welcome back</h3>
+            <p class="text-muted-2 mb-4">Log in with your name to your dashboard.</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Full Name</label>
+              <input type="text" id="loginName" class="form-control" placeholder="Enter your full name" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Password</label>
+              <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" />
+            </div>
+            <div id="loginError" class="text-danger small mb-2"></div>
+            <button class="btn btn-brand w-100 py-2" onclick="doLogin()">Log In</button>
+            <p class="text-center mt-3 mb-0 text-muted-2">No account?
+              <a href="#" onclick="showRegister();return false" class="fw-semibold" style="color:var(--brand)">Create one</a>
+            </p>
+          </div>
+
+          <!-- REGISTER -->
+          <div id="registerForm" style="display:none">
+            <h3 class="fw-bold mb-1">Create your account</h3>
+            <p class="text-muted-2 mb-4">Tell us a little about you.</p>
+            <div class="row g-3">
+              <div class="col-12"><input id="regName" class="form-control" placeholder="Full Name" /></div>
+              <div class="col-6"><input id="regAge" type="number" class="form-control" placeholder="Age" /></div>
+              <div class="col-6">
+                <select id="regGender" class="form-select">
+                  <option value="">Gender</option><option>Male</option><option>Female</option><option>Other</option>
+                </select>
+              </div>
+              <div class="col-6"><input id="regWeight" type="number" class="form-control" placeholder="Weight (kg)" /></div>
+              <div class="col-6"><input id="regHeight" type="number" class="form-control" placeholder="Height (cm)" /></div>
+              <div class="col-6"><input id="regMobile" class="form-control" placeholder="Mobile Number" /></div>
+              <div class="col-6"><input id="regPassword" type="password" class="form-control" placeholder="Password" /></div>
+            </div>
+            <div id="regError" class="text-danger small mt-2"></div>
+            <button class="btn btn-brand w-100 py-2 mt-3" onclick="doRegister()">Register</button>
+            <p class="text-center mt-3 mb-0 text-muted-2">Already registered?
+              <a href="#" onclick="showLogin();return false" class="fw-semibold" style="color:var(--brand)">Log in</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="text-center"><small class="text-muted-2">Founder: <strong>Hepsiba (MCA)</strong> &nbsp;·&nbsp; Gigal Prayer House — Diabetes Care Tracker</small></footer>
+  </div>
+
+  <!-- ================= HEALTH PROFILE SETUP ================= -->
+  <div id="profileScreen" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:24px;">
+    <div class="glass p-4 p-md-5" style="max-width:760px; width:100%">
+      <h3 class="fw-bold mb-1">Health Profile</h3>
+      <p class="text-muted-2 mb-4">Add your health information so we can personalize your plan.</p>
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label small fw-semibold">Current Blood Sugar (mg/dL)</label><input id="hCurrent" type="number" class="form-control" placeholder="e.g. 140" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">Fasting Blood Sugar (mg/dL)</label><input id="hFasting" type="number" class="form-control" placeholder="e.g. 110" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">Post-Meal Sugar (mg/dL)</label><input id="hPost" type="number" class="form-control" placeholder="e.g. 160" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">HbA1c (%)</label><input id="hHba1c" type="number" step="0.1" class="form-control" placeholder="e.g. 6.8" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">Blood Pressure (sys/dia)</label><input id="hBp" class="form-control" placeholder="e.g. 120/80" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">Daily Walking (min)</label><input id="hWalk" type="number" class="form-control" placeholder="e.g. 30" /></div>
+        <div class="col-md-4"><label class="form-label small fw-semibold">Sleep (hours)</label><input id="hSleep" type="number" step="0.5" class="form-control" placeholder="e.g. 7" /></div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Smoking Status</label>
+          <select id="hSmoke" class="form-select"><option>Non-smoker</option><option>Occasional</option><option>Regular</option></select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Alcohol Consumption</label>
+          <select id="hAlcohol" class="form-select"><option>None</option><option>Occasional</option><option>Regular</option></select>
+        </div>
+      </div>
+      <button class="btn btn-brand w-100 py-2 mt-4" onclick="saveProfile()">Save & Continue to Dashboard</button>
+      <p class="text-center mt-3 mb-0"><small class="text-muted-2">Founder: <strong>Hepsiba (MCA)</strong></small></p>
+    </div>
+  </div>
+
+  <!-- ================= APP SCREEN ================= -->
+  <div id="appScreen">
+    <div class="overlay-bg" id="overlayBg" onclick="toggleSidebar(false)"></div>
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="d-flex align-items-center gap-2 px-2 mb-4">
+          <i class="bi bi-heart-pulse-fill" style="font-size:1.6rem; color:var(--brand)"></i>
+          <div style="line-height:1.05">
+            <span class="brand-text" style="font-size:1.05rem; display:block">Gigal Prayer House</span>
+            <small class="text-muted-2" style="font-size:.72rem">Diabetes Care Tracker</small>
+          </div>
+        </div>
+        <a class="nav-link-side active" data-page="dashboard" onclick="go('dashboard')"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a class="nav-link-side" data-page="diet" onclick="go('diet')"><i class="bi bi-egg-fried"></i> Diet Planner</a>
+        <a class="nav-link-side" data-page="exercise" onclick="go('exercise')"><i class="bi bi-bicycle"></i> Exercise Planner</a>
+        <a class="nav-link-side" data-page="alarms" onclick="go('alarms')"><i class="bi bi-alarm"></i> Reminders</a>
+        <a class="nav-link-side" data-page="roadmap" onclick="go('roadmap')"><i class="bi bi-signpost-split"></i> Roadmap</a>
+        <a class="nav-link-side" data-page="analytics" onclick="go('analytics')"><i class="bi bi-bar-chart-line"></i> Analytics</a>
+        <a class="nav-link-side" data-page="progress" onclick="go('progress')"><i class="bi bi-trophy"></i> Progress</a>
+        <a class="nav-link-side" data-page="reports" onclick="go('reports')"><i class="bi bi-file-earmark-medical"></i> Reports</a>
+        <a class="nav-link-side" data-page="profile" onclick="go('profile')"><i class="bi bi-person-circle"></i> User Profile</a>
+        <a class="nav-link-side" data-page="settings" onclick="go('settings')"><i class="bi bi-gear"></i> Settings</a>
+        <hr style="border-color:var(--border)" />
+        <a class="nav-link-side" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Log Out</a>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <div class="topbar">
+          <button class="btn btn-light menu-toggle glass" onclick="toggleSidebar(true)"><i class="bi bi-list"></i></button>
+          <div class="flex-grow-1">
+            <h4 class="m-0 fw-bold" id="pageTitle">Dashboard</h4>
+            <small class="text-muted-2" id="welcomeLine">Welcome back</small>
+          </div>
+          <button class="btn btn-sm btn-brand" onclick="sendToMobile()" title="Send results to your mobile"><i class="bi bi-phone"></i><span class="d-none d-md-inline"> Send to Mobile</span></button>
+          <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+            <i class="bi bi-sun-fill"></i>
+            <input class="form-check-input" type="checkbox" id="themeToggle" onchange="toggleTheme()" />
+            <i class="bi bi-moon-stars-fill"></i>
+          </div>
+        </div>
+
+        <!-- Emergency banner (global) -->
+        <div class="emergency-banner" id="emergencyBanner">
+          <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-exclamation-octagon-fill" style="font-size:1.8rem"></i>
+            <div>
+              <h5 class="fw-bold m-0">⚠️ Immediate Medical Attention Required</h5>
+              <p class="m-0 small" id="emergencyMsg"></p>
+              <p class="m-0 small mt-1"><strong>Guidance:</strong> Stay calm, hydrate with water (no sugar), and contact your doctor or emergency services now. Do not drive yourself if feeling unwell.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pages injected here -->
+        <div id="pageDashboard" class="page active"></div>
+        <div id="pageDiet" class="page"></div>
+        <div id="pageExercise" class="page"></div>
+        <div id="pageAlarms" class="page"></div>
+        <div id="pageRoadmap" class="page"></div>
+        <div id="pageAnalytics" class="page"></div>
+        <div id="pageProgress" class="page"></div>
+        <div id="pageReports" class="page"></div>
+        <div id="pageProfile" class="page"></div>
+        <div id="pageSettings" class="page"></div>
+
+        <div class="disclaimer mt-4">
+          <strong>Medical Disclaimer:</strong> This dashboard is designed for health tracking and educational purposes only.
+          It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified
+          healthcare provider for medical decisions.
+        </div>
+
+        <footer class="text-center mt-4 pt-3" style="border-top:1px solid var(--border)">
+          <div class="fw-semibold">Gigal Prayer House — Diabetes Care Tracker</div>
+          <small class="text-muted-2">Founder: <strong>Hepsiba (MCA)</strong> &nbsp;·&nbsp; © <span id="footYear"></span> All rights reserved.</small>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- audio for alarm -->
+  <audio id="alarmAudio" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script>
+  /* =================================================================
+     Diabetes Care Tracker — application logic
+     Data persisted in localStorage. No backend required.
+  ================================================================= */
+  const DB_USERS = 'dct_users';
+  const DB_SESSION = 'dct_session';
+  const DB_THEME = 'dct_theme';
+
+  let USER = null;          // current logged-in user object (reference into users store)
+  let charts = {};          // chart instances
+
+  /* ---------- storage helpers ---------- */
+  const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+  const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const getUsers = () => load(DB_USERS, {});
+  const setUsers = (u) => save(DB_USERS, u);
+  const persistUser = () => { const u = getUsers(); u[USER.name.trim().toLowerCase()] = USER; setUsers(u); };
+  const todayKey = () => new Date().toISOString().slice(0,10);
+
+  /* ---------- THEME ---------- */
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    const tog = document.getElementById('themeToggle');
+    if (tog) tog.checked = (t === 'dark');
+    save(DB_THEME, t);
+  }
+  function toggleTheme(){
+    const cur = document.documentElement.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+    // re-render charts so colors update
+    if (USER && document.getElementById('pageAnalytics').classList.contains('active')) renderAnalytics();
+  }
+
+  /* ---------- AUTH ---------- */
+  function showRegister(){ document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='block'; }
+  function showLogin(){ document.getElementById('registerForm').style.display='none'; document.getElementById('loginForm').style.display='block'; }
+
+  function doRegister(){
+    const g = id => document.getElementById(id).value.trim();
+    const err = document.getElementById('regError');
+    const u = {
+      name:g('regName'), age:+g('regAge'), gender:g('regGender'),
+      weight:+g('regWeight'), height:+g('regHeight'), dtype:'Type 2',
+      mobile:g('regMobile'), password:g('regPassword')
+    };
+    if(!u.name||!u.age||!u.gender||!u.weight||!u.height||!u.mobile||!u.password){
+      err.textContent='Please fill in all fields.'; return;
+    }
+    const key = u.name.trim().toLowerCase();
+    const users = getUsers();
+    if(users[key]){ err.textContent='An account with this name already exists.'; return; }
+    u.profile = null;            // health profile filled later
+    u.logs = seedLogs(u);        // historical sample + tracking data
+    u.created = todayKey();
+    users[key] = u; setUsers(users);
+    save(DB_SESSION, key);
+    USER = u;
+    enterProfileSetup();
+  }
+
+  function doLogin(){
+    const name = document.getElementById('loginName').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPassword').value;
+    const err = document.getElementById('loginError');
+    const users = getUsers();
+    const match = Object.values(users).find(u => (u.name||'').trim().toLowerCase() === name && u.password === pass);
+    if(!match){ err.textContent='Invalid name or password.'; return; }
+    USER = match;
+    save(DB_SESSION, USER.name.trim().toLowerCase());
+    USER.profile ? enterApp() : enterProfileSetup();
+  }
+
+  function logout(){ localStorage.removeItem(DB_SESSION); USER=null; location.reload(); }
+
+  /* ---------- HEALTH PROFILE ---------- */
+  function enterProfileSetup(){
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('appScreen').style.display='none';
+    const p = document.getElementById('profileScreen');
+    p.style.display='flex';
+  }
+  function saveProfile(){
+    const g = id => document.getElementById(id).value.trim();
+    USER.profile = {
+      current:+g('hCurrent')||0, fasting:+g('hFasting')||0, post:+g('hPost')||0,
+      hba1c:+g('hHba1c')||0, bp:g('hBp')||'120/80', walk:+g('hWalk')||0,
+      sleep:+g('hSleep')||0, smoke:g('hSmoke'), alcohol:g('hAlcohol')
+    };
+    // record today's readings into logs
+    const t = todayKey();
+    USER.logs.sugar[t] = USER.profile.current || USER.profile.fasting;
+    USER.logs.hba1c[t] = USER.profile.hba1c;
+    USER.logs.weight[t] = USER.weight;
+    persistUser();
+    document.getElementById('profileScreen').style.display='none';
+    enterApp();
+  }
+
+  /* ---------- seed sample tracking data so charts/analytics look alive ---------- */
+  function seedLogs(u){
+    const logs = { sugar:{}, hba1c:{}, weight:{}, water:{}, exercise:{}, diet:{}, meds:{}, healthyDays:[], badges:[] };
+    const today = new Date();
+    let baseSugar = 165, baseHba = 7.6, baseW = u.weight || 78;
+    for(let i=29;i>=0;i--){
+      const d = new Date(today); d.setDate(today.getDate()-i);
+      const key = d.toISOString().slice(0,10);
+      // gentle downward (improving) trend with noise
+      logs.sugar[key]   = Math.round(baseSugar - (29-i)*0.9 + (Math.random()*16-8));
+      logs.weight[key]  = +(baseW - (29-i)*0.06 + (Math.random()*0.6-0.3)).toFixed(1);
+      logs.water[key]   = +(1.8 + Math.random()*1.6).toFixed(1);
+      logs.exercise[key]= Math.random() > .28 ? 1 : 0;
+      if(i % 7 === 0) logs.hba1c[key] = +(baseHba - (29-i)/29*0.9).toFixed(1);
+    }
+    return logs;
+  }
+
+  /* ---------- ENTER APP ---------- */
+  function enterApp(){
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('profileScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    document.getElementById('welcomeLine').textContent = 'Welcome back, ' + USER.name.split(' ')[0] + ' 👋';
+    const fy=document.getElementById('footYear'); if(fy) fy.textContent=new Date().getFullYear();
+    ensureTodayDefaults();
+    checkEmergency();
+    renderDashboard();
+    requestNotifyPermission();
+  }
+
+  function ensureTodayDefaults(){
+    const t = todayKey();
+    USER.logs.water[t]   = USER.logs.water[t]   ?? 0;
+    USER.logs.meds       = USER.logs.meds || {};
+    USER.logs.meds[t]    = USER.logs.meds[t]    ?? false;
+    USER.logs.diet       = USER.logs.diet || {};
+    USER.logs.diet[t]    = USER.logs.diet[t]    || {};
+    USER.logs.exDone     = USER.logs.exDone || {};
+    USER.logs.exDone[t]  = USER.logs.exDone[t]  || {};
+    USER.logs.alarmsDone = USER.logs.alarmsDone || {};
+    USER.logs.alarmsDone[t] = USER.logs.alarmsDone[t] || {};
+    persistUser();
+  }
+
+  /* ===========================================================
+     AI DIABETES ANALYSIS ENGINE
+  =========================================================== */
+  function analyze(){
+    const p = USER.profile || {};
+    const age = USER.age, w = USER.weight, h = USER.height/100;
+    const bmi = h ? +(w/(h*h)).toFixed(1) : 0;
+    let score = 100;
+
+    // HbA1c (strongest factor)
+    const a = p.hba1c || 0;
+    if(a >= 9)      score -= 35;
+    else if(a >= 8) score -= 26;
+    else if(a >= 7) score -= 16;
+    else if(a >= 6.5) score -= 9;
+    else if(a >= 5.7) score -= 4;
+
+    // Fasting / current sugar
+    const sug = p.fasting || p.current || 0;
+    if(sug >= 200) score -= 18;
+    else if(sug >= 160) score -= 12;
+    else if(sug >= 126) score -= 7;
+    else if(sug >= 100) score -= 3;
+
+    // BMI
+    if(bmi >= 35) score -= 12;
+    else if(bmi >= 30) score -= 8;
+    else if(bmi >= 25) score -= 4;
+
+    // Lifestyle
+    if(p.walk < 15) score -= 6; else if(p.walk >= 45) score += 3;
+    if(p.sleep < 6) score -= 5; else if(p.sleep >= 7) score += 2;
+    if(p.smoke === 'Regular') score -= 8; else if(p.smoke === 'Occasional') score -= 3;
+    if(p.alcohol === 'Regular') score -= 6; else if(p.alcohol === 'Occasional') score -= 2;
+    if(age >= 60) score -= 4; else if(age >= 45) score -= 2;
+
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    let risk, grade, color;
+    if(score >= 90){ grade='Excellent'; risk='Normal'; color='ok'; }
+    else if(score >= 75){ grade='Good'; risk='Mild Risk'; color='ok'; }
+    else if(score >= 50){ grade='Needs Improvement'; risk='Moderate Risk'; color='warn'; }
+    else { grade='High Risk'; risk='High Risk'; color='crit'; }
+
+    // target sugar
+    const target = (USER.dtype === 'Prediabetes') ? '90–120 mg/dL' : '80–130 mg/dL';
+    return { score, risk, grade, color, bmi, target, hba1c:a, sugar:sug };
+  }
+
+  function statusColor(metric, val){
+    // returns ok/warn/crit for given metric
+    switch(metric){
+      case 'sugar':
+        if(val>0 && val<140) return 'ok'; if(val<200) return 'warn'; return 'crit';
+      case 'hba1c':
+        if(val>0 && val<6.5) return 'ok'; if(val<8) return 'warn'; return 'crit';
+      case 'sleep':
+        if(val>=7) return 'ok'; if(val>=5) return 'warn'; return 'crit';
+      case 'water':
+        if(val>=3) return 'ok'; if(val>=1.5) return 'warn'; return 'crit';
+      default: return 'ok';
+    }
+  }
+  const colorHex = c => c==='ok'?'var(--ok)':c==='warn'?'var(--warn)':'var(--crit)';
+  const pillClass = c => 'pill pill-'+c;
+
+  /* ===========================================================
+     DASHBOARD
+  =========================================================== */
+  function renderDashboard(){
+    const p = USER.profile, t = todayKey();
+    const A = analyze();
+    const diet = buildDiet();
+    const ex = buildExercise();
+    const water = USER.logs.water[t] || 0;
+    const meds = USER.logs.meds[t];
+    const calConsumed = dietCalories(USER.logs.diet[t], diet);
+    const sugarC = statusColor('sugar', A.sugar);
+    const sleepC = statusColor('sleep', p.sleep);
+    const waterC = statusColor('water', water);
+
+    const card = (icon,bg,label,val,sub,pill) => `
+      <div class="col-6 col-lg-3">
+        <div class="glass stat-card">
+          <div class="icon-badge" style="background:${bg}"><i class="bi ${icon}"></i></div>
+          <div class="stat-val">${val}</div>
+          <div class="stat-label">${label}</div>
+          ${sub?`<div class="mt-2">${sub}</div>`:''}
+          ${pill?`<span class="${pillClass(pill)} mt-2 d-inline-block">${pill==='ok'?'Healthy':pill==='warn'?'Warning':'Critical'}</span>`:''}
+        </div>
+      </div>`;
+
+    document.getElementById('pageDashboard').innerHTML = `
+      <div class="row g-3 mb-1">
+        ${card('bi-droplet-half','var(--brand-grad)','Current Diabetes Status', A.risk, `<small class="text-muted-2">Sugar ${A.sugar||'--'} mg/dL</small>`, sugarC)}
+        ${card('bi-bullseye','linear-gradient(135deg,#00bfa6,#1bc47d)','Target Blood Sugar', A.target.split(' ')[0], `<small class="text-muted-2">${A.target}</small>`, 'ok')}
+        ${card('bi-egg-fried','linear-gradient(135deg,#f5a623,#f57f17)',"Today's Diet Plan", diet.length+' meals', `<small class="text-muted-2">${A.target?'Balanced & low-GI':''}</small>`)}
+        ${card('bi-bicycle','linear-gradient(135deg,#7e57c2,#5e35b1)',"Today's Exercise", ex.totalMin+' min', `<small class="text-muted-2">${ex.totalCal} kcal burn</small>`)}
+        ${card('bi-cup-straw','linear-gradient(135deg,#26c6da,#0097a7)','Water Intake', water.toFixed(1)+' / 3 L', progressBar(water/3*100, waterC), waterC)}
+        ${card('bi-fire','linear-gradient(135deg,#ef5350,#e53935)','Calories Consumed', calConsumed+' kcal', `<small class="text-muted-2">Goal ~1800 kcal</small>`)}
+        ${card('bi-capsule','linear-gradient(135deg,#42a5f5,#1976d2)','Medication Status', meds?'Taken':'Pending', meds?'<span class="pill pill-ok">Done</span>':'<span class="pill pill-warn">Due</span>')}
+        ${card('bi-moon-stars','linear-gradient(135deg,#5c6bc0,#3949ab)','Sleep Status', (p.sleep||'--')+' hrs', '', sleepC)}
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+          <div class="glass p-4 h-100">
+            <div class="section-title"><i class="bi bi-robot"></i> AI Health Analysis</div>
+            <div class="health-score-wrap mb-3">
+              <div class="score-circle" id="scoreCircle">
+                <div class="score-inner">
+                  <div class="num" style="color:${colorHex(A.color)}">${A.score}</div>
+                  <div class="text-muted-2 small">Health Score</div>
+                </div>
+              </div>
+            </div>
+            <div class="text-center mb-2"><span class="${pillClass(A.color)}" style="font-size:.9rem">${A.grade}</span></div>
+            <div class="d-flex justify-content-between small text-muted-2"><span>Risk Level</span><span class="fw-semibold" style="color:${colorHex(A.color)}">${A.risk}</span></div>
+            <div class="d-flex justify-content-between small text-muted-2"><span>BMI</span><span class="fw-semibold">${A.bmi||'--'}</span></div>
+            <div class="d-flex justify-content-between small text-muted-2"><span>HbA1c</span><span class="fw-semibold">${A.hba1c||'--'}%</span></div>
+            <div class="d-flex justify-content-between small text-muted-2"><span>Diabetes Type</span><span class="fw-semibold">${USER.dtype}</span></div>
+          </div>
+        </div>
+
+        <div class="col-lg-7">
+          <div class="glass p-4 mb-3">
+            <div class="section-title"><i class="bi bi-lightbulb"></i> Today's Health Tip</div>
+            <div class="tip-card p-3 rounded-3">
+              <i class="bi bi-quote" style="font-size:1.4rem"></i>
+              <p class="m-0 fw-semibold" id="dashTip">${dailyTip()}</p>
+            </div>
+          </div>
+          <div class="glass p-4">
+            <div class="section-title"><i class="bi bi-graph-up-arrow"></i> 30-Day Blood Sugar Trend</div>
+            <canvas id="dashChart" height="120"></canvas>
+          </div>
+        </div>
+      </div>
+    `;
+    // render mini chart + score ring
+    drawScoreRing('scoreCircle', A.score, A.color);
+    drawSugarMini();
+  }
+
+  function progressBar(pct, color){
+    pct = Math.max(0,Math.min(100,pct));
+    return `<div class="progress mt-2" style="height:6px;background:var(--border)">
+      <div class="progress-bar" style="width:${pct}%;background:${colorHex(color)}"></div></div>`;
+  }
+  function drawScoreRing(id, score, color){
+    const el = document.getElementById(id);
+    if(el) el.style.background = `conic-gradient(${colorHex(color)} ${score*3.6}deg, var(--border) 0deg)`;
+  }
+  function drawSugarMini(){
+    const ctx = document.getElementById('dashChart'); if(!ctx) return;
+    const {labels, data} = seriesFrom(USER.logs.sugar);
+    if(charts.dash) charts.dash.destroy();
+    charts.dash = new Chart(ctx, {
+      type:'line',
+      data:{ labels, datasets:[{ label:'Blood Sugar (mg/dL)', data, borderColor:'#1976d2',
+        backgroundColor:'rgba(25,118,210,.15)', fill:true, tension:.35, pointRadius:0, borderWidth:2 }]},
+      options: lineOpts()
+    });
+  }
+
+  /* ===========================================================
+     DIET PLANNER
+  =========================================================== */
+  const DIET_PLAN = [
+    { time:'6:00 AM', slot:'Early Morning', icon:'bi-sunrise', items:['Warm Water','Fenugreek Seeds','Cinnamon Water'], kcal:30 },
+    { time:'8:00 AM', slot:'Breakfast', icon:'bi-egg-fried', items:['Oats','Millets','Boiled Eggs','Sprouts'], kcal:330 },
+    { time:'11:00 AM', slot:'Mid Morning', icon:'bi-apple', items:['Apple','Guava','Cucumber'], kcal:90 },
+    { time:'1:00 PM', slot:'Lunch', icon:'bi-egg', items:['Brown Rice / Ragi Mudde','Chapati','Dal','Salad'], kcal:480 },
+    { time:'4:00 PM', slot:'Evening Snack', icon:'bi-cup-hot', items:['Green Tea','Roasted Nuts'], kcal:150 },
+    { time:'7:00 PM', slot:'Dinner', icon:'bi-moon', items:['Vegetable Soup','Chapati','Grilled Paneer'], kcal:400 },
+    { time:'10:00 PM', slot:'Bed Time', icon:'bi-cup-straw', items:['Warm Milk','Small Protein Snack'], kcal:130 },
+  ];
+  function buildDiet(){ return DIET_PLAN; }
+  function dietCalories(doneMap, plan){
+    doneMap = doneMap||{}; let c=0;
+    plan.forEach((m,i)=>{ if(doneMap[i]) c+=m.kcal; });
+    return c;
+  }
+  function toggleMeal(i){
+    const t=todayKey(); USER.logs.diet[t]=USER.logs.diet[t]||{};
+    USER.logs.diet[t][i]=!USER.logs.diet[t][i]; persistUser();
+    renderDiet();
+  }
+  function renderDiet(){
+    const t=todayKey(); const done=USER.logs.diet[t]||{};
+    const totalCal=DIET_PLAN.reduce((s,m)=>s+m.kcal,0);
+    const eaten=dietCalories(done,DIET_PLAN);
+    const rows=DIET_PLAN.map((m,i)=>`
+      <div class="glass p-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="icon-badge m-0" style="background:var(--brand-grad)"><i class="bi ${m.icon}"></i></div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between">
+              <strong>${m.slot}</strong><span class="text-muted-2 small">${m.time} · ${m.kcal} kcal</span>
+            </div>
+            <div class="mt-1">${m.items.map(x=>`<span class="chip">${x}</span>`).join('')}</div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" ${done[i]?'checked':''} onchange="toggleMeal(${i})">
+          </div>
+        </div>
+      </div>`).join('');
+    document.getElementById('pageDiet').innerHTML=`
+      <div class="glass p-4 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div><div class="section-title m-0"><i class="bi bi-egg-fried"></i> Personalized Diet Planner</div>
+        <small class="text-muted-2">Low-GI, fiber-rich plan for ${USER.dtype}. Tap to mark meals done.</small></div>
+        <div class="text-end"><div class="stat-val">${eaten}/${totalCal}</div><div class="stat-label">kcal consumed today</div></div>
+      </div>
+      ${rows}`;
+  }
+
+  /* ===========================================================
+     EXERCISE PLANNER (age-based)
+  =========================================================== */
+  function buildExercise(){
+    const age=USER.age; let list;
+    if(age<=40) list=[
+      {name:'Brisk Walking',min:30,cal:150,icon:'bi-person-walking'},
+      {name:'Running / Jogging',min:20,cal:200,icon:'bi-person-arms-up'},
+      {name:'Cycling',min:25,cal:180,icon:'bi-bicycle'},
+      {name:'Gym / Strength Workout',min:30,cal:220,icon:'bi-dumbbell'} ];
+    else if(age<=60) list=[
+      {name:'Brisk Walking',min:30,cal:130,icon:'bi-person-walking'},
+      {name:'Yoga',min:25,cal:90,icon:'bi-flower1'},
+      {name:'Stretching',min:15,cal:50,icon:'bi-person-arms-up'} ];
+    else list=[
+      {name:'Slow Walking',min:20,cal:70,icon:'bi-person-walking'},
+      {name:'Chair Exercises',min:15,cal:45,icon:'bi-person-wheelchair'},
+      {name:'Breathing Exercises',min:10,cal:25,icon:'bi-lungs'} ];
+    return { list, totalMin:list.reduce((s,x)=>s+x.min,0), totalCal:list.reduce((s,x)=>s+x.cal,0) };
+  }
+  function toggleEx(i){
+    const t=todayKey(); USER.logs.exDone[t]=USER.logs.exDone[t]||{};
+    USER.logs.exDone[t][i]=!USER.logs.exDone[t][i]; persistUser(); renderExercise();
+  }
+  function renderExercise(){
+    const t=todayKey(); const ex=buildExercise(); const done=USER.logs.exDone[t]||{};
+    const ageBand = USER.age<=40?'20–40':USER.age<=60?'40–60':'60+';
+    const completed=ex.list.filter((_,i)=>done[i]).length;
+    const rows=ex.list.map((e,i)=>`
+      <div class="glass p-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="icon-badge m-0" style="background:linear-gradient(135deg,#7e57c2,#5e35b1)"><i class="bi ${e.icon}"></i></div>
+          <div class="flex-grow-1">
+            <strong>${e.name}</strong>
+            <div class="text-muted-2 small"><i class="bi bi-clock"></i> ${e.min} min · <i class="bi bi-fire"></i> ${e.cal} kcal</div>
+          </div>
+          <button class="btn btn-sm ${done[i]?'btn-success':'btn-outline-secondary'}" onclick="toggleEx(${i})">
+            ${done[i]?'<i class="bi bi-check-lg"></i> Done':'Mark Done'}
+          </button>
+        </div>
+      </div>`).join('');
+    document.getElementById('pageExercise').innerHTML=`
+      <div class="glass p-4 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div><div class="section-title m-0"><i class="bi bi-bicycle"></i> Exercise Planner</div>
+        <small class="text-muted-2">Tailored for age group ${ageBand}. Total ${ex.totalMin} min · ${ex.totalCal} kcal.</small></div>
+        <div class="text-end"><div class="stat-val">${completed}/${ex.list.length}</div><div class="stat-label">completed today</div></div>
+      </div>
+      ${rows}`;
+  }
+
+  /* ===========================================================
+     SMART ALARM / REMINDERS
+  =========================================================== */
+  const ALARMS = [
+    {time:'06:00', label:'Wake Up', icon:'bi-sunrise'},
+    {time:'06:30', label:'Water Intake', icon:'bi-cup-straw'},
+    {time:'08:00', label:'Breakfast', icon:'bi-egg-fried'},
+    {time:'09:00', label:'Medication', icon:'bi-capsule'},
+    {time:'10:00', label:'Exercise', icon:'bi-bicycle'},
+    {time:'13:00', label:'Lunch', icon:'bi-egg'},
+    {time:'16:00', label:'Evening Snack', icon:'bi-cup-hot'},
+    {time:'19:00', label:'Dinner', icon:'bi-moon'},
+    {time:'22:30', label:'Sleep Time', icon:'bi-moon-stars'},
+  ];
+  function markAlarm(i){
+    const t=todayKey(); USER.logs.alarmsDone[t]=USER.logs.alarmsDone[t]||{};
+    USER.logs.alarmsDone[t][i]=true;
+    if(ALARMS[i].label==='Medication') USER.logs.meds[t]=true;
+    persistUser(); renderAlarms(); if(document.getElementById('pageDashboard').classList.contains('active')) renderDashboard();
+  }
+  function snooze(i){ alert(ALARMS[i].label+' snoozed for 10 minutes.'); }
+  function renderAlarms(){
+    const t=todayKey(); const done=USER.logs.alarmsDone[t]||{};
+    const rows=ALARMS.map((a,i)=>`
+      <div class="alarm-row">
+        <i class="bi ${a.icon}" style="font-size:1.3rem;color:var(--brand)"></i>
+        <div class="alarm-time">${fmt12(a.time)}</div>
+        <div class="flex-grow-1 fw-semibold">${a.label}</div>
+        ${done[i]
+          ? '<span class="pill pill-ok"><i class="bi bi-check-lg"></i> Completed</span>'
+          : `<button class="btn btn-sm btn-outline-secondary" onclick="snooze(${i})">Snooze</button>
+             <button class="btn btn-sm btn-brand" onclick="markAlarm(${i})">Done</button>`}
+      </div>`).join('');
+    document.getElementById('pageAlarms').innerHTML=`
+      <div class="glass p-4 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div><div class="section-title m-0"><i class="bi bi-alarm"></i> Smart Reminders</div>
+        <small class="text-muted-2">Browser notifications with sound. Mark each as completed.</small></div>
+        <button class="btn btn-sm btn-brand" onclick="requestNotifyPermission(true)"><i class="bi bi-bell"></i> Enable Notifications</button>
+      </div>
+      <div class="glass p-3">${rows}</div>`;
+  }
+  function fmt12(t){ let [h,m]=t.split(':').map(Number); const ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(m).padStart(2,'0')} ${ap}`; }
+
+  let notifyTimer=null;
+  function requestNotifyPermission(force){
+    if(!('Notification' in window)) return;
+    if(Notification.permission==='default' || force) Notification.requestPermission().then(()=>{ if(force) startAlarmWatcher(); });
+    else startAlarmWatcher();
+  }
+  function startAlarmWatcher(){
+    if(notifyTimer) clearInterval(notifyTimer);
+    notifyTimer=setInterval(()=>{
+      const now=new Date(); const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+      const t=todayKey(); const done=USER.logs.alarmsDone[t]||{};
+      ALARMS.forEach((a,i)=>{ if(a.time===hm && !done[i]){ fireAlarm(a); } });
+    },30000);
+  }
+  function fireAlarm(a){
+    try{ document.getElementById('alarmAudio').play(); }catch(e){}
+    if('Notification' in window && Notification.permission==='granted')
+      new Notification('⏰ '+a.label, { body:'Diabetes Care Tracker reminder', icon:'' });
+  }
+
+  /* ===========================================================
+     DIABETES REDUCTION ROADMAP
+  =========================================================== */
+  const ROADMAP=[
+    {wk:'Week 1', focus:['Improve hydration','Reduce sugar intake'], icon:'bi-droplet'},
+    {wk:'Week 2', focus:['Daily walking','Improve sleep'], icon:'bi-person-walking'},
+    {wk:'Week 3', focus:['Weight management'], icon:'bi-speedometer2'},
+    {wk:'Week 4', focus:['Better blood sugar control'], icon:'bi-graph-down-arrow'},
+  ];
+  function roadmapProgress(){
+    // progress based on days since account creation
+    const start=new Date(USER.created); const days=Math.floor((Date.now()-start)/86400000);
+    return Math.min(100, Math.round((days/28)*100));
+  }
+  function renderRoadmap(){
+    const pct=roadmapProgress(); const curWeek=Math.min(4, Math.floor(pct/25)+ (pct<100?1:0));
+    const steps=ROADMAP.map((r,i)=>{
+      const reached = pct >= i*25;
+      return `<div class="roadmap-step">
+        <div class="roadmap-dot" style="${reached?'':'opacity:.4'}">${reached?'<i class="bi bi-check-lg"></i>':i+1}</div>
+        <div class="glass p-3 flex-grow-1">
+          <div class="d-flex justify-content-between"><strong><i class="bi ${r.icon}"></i> ${r.wk}</strong>
+          ${reached?'<span class="pill pill-ok">In progress / done</span>':'<span class="pill pill-warn">Upcoming</span>'}</div>
+          <div class="mt-1">${r.focus.map(f=>`<span class="chip">${f}</span>`).join('')}</div>
+        </div></div>`;
+    }).join('');
+    document.getElementById('pageRoadmap').innerHTML=`
+      <div class="glass p-4 mb-3">
+        <div class="section-title"><i class="bi bi-signpost-split"></i> Diabetes Reduction Roadmap</div>
+        <div class="d-flex justify-content-between small mb-1"><span class="text-muted-2">Overall progress</span><strong>${pct}%</strong></div>
+        <div class="progress" style="height:10px;background:var(--border)"><div class="progress-bar" style="width:${pct}%;background:var(--brand-grad)"></div></div>
+      </div>
+      <div class="glass p-4">${steps}</div>`;
+  }
+
+  /* ===========================================================
+     ANALYTICS (Chart.js)
+  =========================================================== */
+  function seriesFrom(obj){
+    const keys=Object.keys(obj).sort();
+    return { labels:keys.map(k=>k.slice(5)), data:keys.map(k=>obj[k]) };
+  }
+  function gridColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--border') || 'rgba(0,0,0,.1)'; }
+  function tickColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#666'; }
+  function lineOpts(){
+    const tc=tickColor(), gc=gridColor();
+    return { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:tc } } },
+      scales:{ x:{ ticks:{ color:tc, maxTicksLimit:8 }, grid:{ color:gc } },
+               y:{ ticks:{ color:tc }, grid:{ color:gc } } } };
+  }
+  function renderAnalytics(){
+    document.getElementById('pageAnalytics').innerHTML=`
+      <div class="row g-3">
+        <div class="col-lg-6"><div class="glass p-3"><div class="section-title"><i class="bi bi-droplet"></i> Blood Sugar Trend</div><div style="height:240px"><canvas id="cSugar"></canvas></div></div></div>
+        <div class="col-lg-6"><div class="glass p-3"><div class="section-title"><i class="bi bi-activity"></i> HbA1c Trend</div><div style="height:240px"><canvas id="cHba"></canvas></div></div></div>
+        <div class="col-lg-6"><div class="glass p-3"><div class="section-title"><i class="bi bi-speedometer2"></i> Weight Trend</div><div style="height:240px"><canvas id="cWeight"></canvas></div></div></div>
+        <div class="col-lg-6"><div class="glass p-3"><div class="section-title"><i class="bi bi-bicycle"></i> Exercise Completion</div><div style="height:240px"><canvas id="cEx"></canvas></div></div></div>
+        <div class="col-lg-12"><div class="glass p-3"><div class="section-title"><i class="bi bi-cup-straw"></i> Water Intake (L)</div><div style="height:240px"><canvas id="cWater"></canvas></div></div></div>
+      </div>`;
+    Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}}); charts={};
+    const sugar=seriesFrom(USER.logs.sugar);
+    const hba=seriesFrom(USER.logs.hba1c);
+    const weight=seriesFrom(USER.logs.weight);
+    const water=seriesFrom(USER.logs.water);
+
+    charts.sugar=new Chart(cSugar,{type:'line',data:{labels:sugar.labels,datasets:[{label:'mg/dL',data:sugar.data,borderColor:'#1976d2',backgroundColor:'rgba(25,118,210,.15)',fill:true,tension:.35,pointRadius:0,borderWidth:2}]},options:lineOpts()});
+    charts.hba=new Chart(cHba,{type:'line',data:{labels:hba.labels,datasets:[{label:'HbA1c %',data:hba.data,borderColor:'#00bfa6',backgroundColor:'rgba(0,191,166,.15)',fill:true,tension:.35,pointRadius:3,borderWidth:2}]},options:lineOpts()});
+    charts.weight=new Chart(cWeight,{type:'bar',data:{labels:weight.labels,datasets:[{label:'kg',data:weight.data,backgroundColor:'rgba(126,87,194,.6)',borderRadius:4}]},options:lineOpts()});
+
+    const t=todayKey();
+    const exVals=Object.values(USER.logs.exercise||{});
+    const exDoneCount=exVals.filter(v=>v).length, exMiss=exVals.length-exDoneCount;
+    const pieOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tickColor()}}}};
+    charts.ex=new Chart(cEx,{type:'pie',data:{labels:['Completed','Missed'],datasets:[{data:[exDoneCount,exMiss],backgroundColor:['#2e9e5b','#e0e0e0']}]},options:pieOpts});
+
+    const waterOpts=lineOpts();
+    charts.water=new Chart(cWater,{type:'line',data:{labels:water.labels,datasets:[{label:'Litres',data:water.data,borderColor:'#26c6da',backgroundColor:'rgba(38,198,218,.25)',fill:true,tension:.3,pointRadius:0,borderWidth:2}]},options:waterOpts});
+  }
+
+  /* ===========================================================
+     DAILY TIPS ENGINE
+  =========================================================== */
+  const TIPS=[
+    'Drink 3 liters of water throughout the day.',
+    'Walk for 30 minutes after meals to lower blood sugar.',
+    'Avoid sugary drinks — choose water or unsweetened tea.',
+    'Include fiber-rich foods like vegetables and whole grains.',
+    'Maintain a regular sleep schedule of 7–8 hours.',
+    'Check your blood sugar at the same times each day.',
+    'Swap white rice for brown rice, millets or ragi.',
+    'Add a handful of nuts as a snack instead of biscuits.',
+    'Take the stairs instead of the lift when you can.',
+    'Practice deep breathing to reduce stress hormones.',
+  ];
+  const WEEKLY_TIPS=['Aim for 150 minutes of moderate activity this week.','Plan and prep low-GI meals in advance.','Reduce added sugar to under 25g per day.'];
+  const MONTHLY_GOALS=['Lower HbA1c by 0.3–0.5%.','Build a consistent daily exercise habit.','Reach a healthy weight range step by step.'];
+  function dayOfYear(){ const n=new Date(); return Math.floor((n - new Date(n.getFullYear(),0,0))/86400000); }
+  function dailyTip(){ return TIPS[dayOfYear()%TIPS.length]; }
+  function weeklyTip(){ const wk=Math.floor(dayOfYear()/7); return WEEKLY_TIPS[wk%WEEKLY_TIPS.length]; }
+  function monthlyGoal(){ return MONTHLY_GOALS[new Date().getMonth()%MONTHLY_GOALS.length]; }
+
+  /* ===========================================================
+     PROGRESS TRACKING & BADGES
+  =========================================================== */
+  function computeProgress(){
+    const ex=USER.logs.exercise||{}; const exVals=Object.values(ex);
+    const exRate=exVals.length?Math.round(exVals.filter(v=>v).length/exVals.length*100):0;
+    const water=USER.logs.water||{}; const wVals=Object.values(water);
+    const waterComp=wVals.length?Math.round(wVals.filter(v=>v>=3).length/wVals.length*100):0;
+    const wt=USER.logs.weight; const wKeys=Object.keys(wt).sort();
+    const weightLoss=wKeys.length>1?+(wt[wKeys[0]]-wt[wKeys[wKeys.length-1]]).toFixed(1):0;
+    const sg=USER.logs.sugar; const sKeys=Object.keys(sg).sort();
+    const sugarImp=sKeys.length>1?Math.round(sg[sKeys[0]]-sg[sKeys[sKeys.length-1]]):0;
+    // consecutive healthy days: sugar<140 streak from latest
+    let streak=0; for(let i=sKeys.length-1;i>=0;i--){ if(sg[sKeys[i]]<150) streak++; else break; }
+    return { exRate, waterComp, weightLoss, sugarImp, streak };
+  }
+  function renderProgress(){
+    const P=computeProgress();
+    const days=Math.floor((Date.now()-new Date(USER.created))/86400000)+1;
+    const badges=[
+      {name:'Healthy Starter', emoji:'🌱', earned:true},
+      {name:'7-Day Streak', emoji:'🔥', earned:P.streak>=7},
+      {name:'30-Day Champion', emoji:'🏆', earned:days>=30},
+      {name:'Diabetes Warrior', emoji:'🛡️', earned:P.sugarImp>=20 || P.weightLoss>=2},
+    ];
+    const metric=(icon,label,val,sub)=>`
+      <div class="col-6 col-lg-3"><div class="glass stat-card text-center">
+        <div class="icon-badge mx-auto" style="background:var(--brand-grad)"><i class="bi ${icon}"></i></div>
+        <div class="stat-val">${val}</div><div class="stat-label">${label}</div>
+        ${sub?`<div class="small text-muted-2 mt-1">${sub}</div>`:''}</div></div>`;
+    document.getElementById('pageProgress').innerHTML=`
+      <div class="row g-3 mb-3">
+        ${metric('bi-calendar-check','Consecutive Healthy Days',P.streak,'sugar under 150')}
+        ${metric('bi-speedometer2','Weight Change',(P.weightLoss>=0?'-':'+')+Math.abs(P.weightLoss)+' kg','since start')}
+        ${metric('bi-graph-down-arrow','Blood Sugar Improvement',(P.sugarImp>=0?'-':'+')+Math.abs(P.sugarImp),'mg/dL since start')}
+        ${metric('bi-bicycle','Exercise Completion',P.exRate+'%','')}
+      </div>
+      <div class="glass p-4 mb-3">
+        <div class="section-title"><i class="bi bi-cup-straw"></i> Water Intake Compliance</div>
+        <div class="progress" style="height:12px;background:var(--border)"><div class="progress-bar" style="width:${P.waterComp}%;background:var(--brand-grad)">${P.waterComp}%</div></div>
+      </div>
+      <div class="glass p-4">
+        <div class="section-title"><i class="bi bi-trophy"></i> Achievement Badges</div>
+        <div class="row g-3">
+          ${badges.map(b=>`<div class="col-6 col-lg-3"><div class="glass badge-ach ${b.earned?'earned':''}">
+            <div class="emoji">${b.emoji}</div><div class="fw-semibold mt-1">${b.name}</div>
+            <div class="small text-muted-2">${b.earned?'Earned':'Locked'}</div></div></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ===========================================================
+     EMERGENCY MODULE
+  =========================================================== */
+  function checkEmergency(){
+    const p=USER.profile; const banner=document.getElementById('emergencyBanner'); const msg=document.getElementById('emergencyMsg');
+    let alerts=[];
+    const sug=Math.max(p.current||0,p.post||0,p.fasting||0);
+    if(sug>300) alerts.push('Blood sugar is critically high ('+sug+' mg/dL).');
+    const bp=(p.bp||'').split('/').map(Number);
+    if(bp[0]>=180 || bp[1]>=120) alerts.push('Blood pressure is in a critical range ('+p.bp+').');
+    if(alerts.length){ banner.style.display='block'; msg.textContent=alerts.join(' ')+' Please seek medical help immediately.'; }
+    else banner.style.display='none';
+  }
+
+  /* ===========================================================
+     REPORTS (printable PDF via browser)
+  =========================================================== */
+  function renderReports(){
+    document.getElementById('pageReports').innerHTML=`
+      <div class="glass p-4 mb-3">
+        <div class="section-title"><i class="bi bi-file-earmark-medical"></i> Health Reports</div>
+        <p class="text-muted-2 small">Generate a printable report (use your browser's "Save as PDF" in the print dialog). Reports include health summary, sugar trends, diet & exercise compliance, and suggestions.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-brand" onclick="generateReport('Daily')"><i class="bi bi-download"></i> Daily Report</button>
+          <button class="btn btn-brand" onclick="generateReport('Weekly')"><i class="bi bi-download"></i> Weekly Report</button>
+          <button class="btn btn-brand" onclick="generateReport('Monthly')"><i class="bi bi-download"></i> Monthly Report</button>
+          <button class="btn btn-outline-primary" onclick="sendToMobile()"><i class="bi bi-phone"></i> Send to Mobile (SMS)</button>
+          <button class="btn btn-outline-success" onclick="sendWhatsApp()"><i class="bi bi-whatsapp"></i> Send via WhatsApp</button>
+        </div>
+        <p class="text-muted-2 small mt-2 mb-0"><i class="bi bi-info-circle"></i> "Send to Mobile" opens your phone's messaging app with your results pre-filled to your registered number (${'works on mobile devices'}).</p>
+      </div>
+      <div class="glass p-4" id="reportPreview"></div>`;
+    buildReportPreview('Weekly');
+  }
+  function buildReportPreview(kind){
+    const A=analyze(); const P=computeProgress();
+    document.getElementById('reportPreview').innerHTML=`
+      <h5 class="fw-bold">${kind} Health Summary</h5>
+      <div class="row small">
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Patient:</strong> ${USER.name} · ${USER.age}y · ${USER.gender}</p>
+          <p class="mb-1"><strong>Diabetes Type:</strong> ${USER.dtype}</p>
+          <p class="mb-1"><strong>Health Score:</strong> ${A.score}/100 (${A.grade})</p>
+          <p class="mb-1"><strong>Risk Level:</strong> ${A.risk}</p>
+        </div>
+        <div class="col-md-6">
+          <p class="mb-1"><strong>HbA1c:</strong> ${A.hba1c||'--'}% · <strong>BMI:</strong> ${A.bmi}</p>
+          <p class="mb-1"><strong>Sugar improvement:</strong> ${P.sugarImp} mg/dL</p>
+          <p class="mb-1"><strong>Exercise completion:</strong> ${P.exRate}%</p>
+          <p class="mb-1"><strong>Water compliance:</strong> ${P.waterComp}%</p>
+        </div>
+      </div>
+      <hr><strong class="small">Improvement Suggestions</strong>
+      <ul class="small mb-0">
+        <li>${weeklyTip()}</li><li>${dailyTip()}</li><li>Monthly goal: ${monthlyGoal()}</li>
+      </ul>`;
+  }
+  function generateReport(kind){
+    const A=analyze(); const P=computeProgress();
+    const win=window.open('','_blank');
+    win.document.write(`<html><head><title>${kind} Report — ${USER.name}</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a2733}h1{color:#1976d2}
+      .sub{color:#00897b}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
+      .box{background:#f3f8fd;padding:14px;border-radius:8px;margin:10px 0}.disc{font-size:12px;color:#777;margin-top:24px;border-top:1px solid #ddd;padding-top:10px}</style></head><body>
+      <h1>🩺 Gigal Prayer House — Diabetes Care Tracker</h1><h2 class="sub">${kind} Health Report</h2>
+      <p>Generated: ${new Date().toLocaleString()}</p>
+      <div class="box"><strong>Patient:</strong> ${USER.name} &nbsp;|&nbsp; Age ${USER.age} &nbsp;|&nbsp; ${USER.gender} &nbsp;|&nbsp; ${USER.dtype}</div>
+      <table><tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Health Score</td><td>${A.score}/100 (${A.grade})</td></tr>
+        <tr><td>Risk Level</td><td>${A.risk}</td></tr>
+        <tr><td>HbA1c</td><td>${A.hba1c||'--'}%</td></tr>
+        <tr><td>BMI</td><td>${A.bmi}</td></tr>
+        <tr><td>Target Blood Sugar</td><td>${A.target}</td></tr>
+        <tr><td>Blood Sugar Improvement</td><td>${P.sugarImp} mg/dL</td></tr>
+        <tr><td>Weight Change</td><td>${P.weightLoss} kg</td></tr>
+        <tr><td>Exercise Completion</td><td>${P.exRate}%</td></tr>
+        <tr><td>Water Compliance</td><td>${P.waterComp}%</td></tr>
+        <tr><td>Healthy Day Streak</td><td>${P.streak} days</td></tr>
+      </table>
+      <h3 class="sub">Improvement Suggestions</h3>
+      <ul><li>${weeklyTip()}</li><li>${dailyTip()}</li><li>Monthly goal: ${monthlyGoal()}</li></ul>
+      <p class="disc"><strong>Medical Disclaimer:</strong> This report is for health tracking and educational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider.</p>
+      <p class="disc" style="text-align:center"><strong>Founder: Hepsiba (MCA)</strong> · Gigal Prayer House — Diabetes Care Tracker</p>
+      </body></html>`);
+    win.document.close();
+    setTimeout(()=>win.print(), 400);
+  }
+
+  /* ---------- Send results to mobile (SMS / WhatsApp) ---------- */
+  function buildResultMessage(){
+    const A=analyze(); const P=computeProgress();
+    return [
+      'GIGAL PRAYER HOUSE — Diabetes Care Tracker',
+      'Name: '+USER.name,
+      'Health Score: '+A.score+'/100 ('+A.grade+')',
+      'Risk Level: '+A.risk,
+      'Blood Sugar: '+(A.sugar||'--')+' mg/dL | HbA1c: '+(A.hba1c||'--')+'%',
+      'BMI: '+A.bmi+' | Target: '+A.target,
+      'Exercise: '+P.exRate+'% | Water: '+P.waterComp+'% | Streak: '+P.streak+' days',
+      'Note: For health tracking only — consult your doctor for medical decisions.',
+      'Founder: Hepsiba (MCA)'
+    ].join('\n');
+  }
+  function sendToMobile(){
+    const num=(USER.mobile||'').replace(/[^0-9+]/g,'');
+    if(!num){ toast('Add your mobile number in Profile first'); return; }
+    const body=encodeURIComponent(buildResultMessage());
+    // opens the device SMS app pre-filled to the registered number
+    window.location.href='sms:'+num+'?body='+body;
+    toast('Opening your messaging app…');
+  }
+  function sendWhatsApp(){
+    const num=(USER.mobile||'').replace(/[^0-9]/g,'');
+    const text=encodeURIComponent(buildResultMessage());
+    window.open('https://wa.me/'+num+'?text='+text,'_blank');
+  }
+
+  /* ===========================================================
+     PROFILE & SETTINGS
+  =========================================================== */
+  function renderProfile(){
+    const p=USER.profile||{};
+    document.getElementById('pageProfile').innerHTML=`
+      <div class="glass p-4 mb-3">
+        <div class="section-title"><i class="bi bi-person-circle"></i> User Profile</div>
+        <div class="row g-3">
+          ${pf('Full Name','name','text',true)}${pf('Age','age','number')}${pf('Gender','gender')}
+          ${pf('Weight (kg)','weight','number')}${pf('Height (cm)','height','number')}
+          ${pfSelect('Diabetes Type','dtype',['Type 1','Type 2','Prediabetes'])}
+          ${pf('Mobile','mobile')}
+        </div>
+        <button class="btn btn-brand mt-3" onclick="saveProfileEdits()">Save Profile</button>
+      </div>
+      <div class="glass p-4">
+        <div class="section-title"><i class="bi bi-clipboard2-pulse"></i> Health Information</div>
+        <div class="row g-3">
+          ${hf('Current Blood Sugar','current')}${hf('Fasting Sugar','fasting')}${hf('Post-Meal Sugar','post')}
+          ${hf('HbA1c (%)','hba1c')}${hfText('Blood Pressure','bp')}${hf('Daily Walking (min)','walk')}
+          ${hf('Sleep (hrs)','sleep')}
+          ${hSelect('Smoking','smoke',['Non-smoker','Occasional','Regular'])}
+          ${hSelect('Alcohol','alcohol',['None','Occasional','Regular'])}
+        </div>
+        <button class="btn btn-brand mt-3" onclick="saveHealthEdits()">Update Health Info</button>
+      </div>`;
+    function pf(l,k,t='text',ro=false){return `<div class="col-md-4"><label class="form-label small fw-semibold">${l}</label><input id="pf_${k}" type="${t}" class="form-control" value="${USER[k]??''}" ${ro?'readonly':''}></div>`;}
+    function pfSelect(l,k,opts){return `<div class="col-md-4"><label class="form-label small fw-semibold">${l}</label><select id="pf_${k}" class="form-select">${opts.map(o=>`<option ${USER[k]===o?'selected':''}>${o}</option>`).join('')}</select></div>`;}
+    function hf(l,k){return `<div class="col-md-4"><label class="form-label small fw-semibold">${l}</label><input id="hf_${k}" type="number" step="0.1" class="form-control" value="${p[k]??''}"></div>`;}
+    function hfText(l,k){return `<div class="col-md-4"><label class="form-label small fw-semibold">${l}</label><input id="hf_${k}" class="form-control" value="${p[k]??''}"></div>`;}
+    function hSelect(l,k,opts){return `<div class="col-md-4"><label class="form-label small fw-semibold">${l}</label><select id="hf_${k}" class="form-select">${opts.map(o=>`<option ${p[k]===o?'selected':''}>${o}</option>`).join('')}</select></div>`;}
+  }
+  function saveProfileEdits(){
+    ['name','age','gender','weight','height','dtype','mobile'].forEach(k=>{
+      const el=document.getElementById('pf_'+k); if(!el) return;
+      USER[k]=(k==='age'||k==='weight'||k==='height')?+el.value:el.value;
+    });
+    persistUser(); document.getElementById('welcomeLine').textContent='Welcome back, '+USER.name.split(' ')[0]+' 👋';
+    toast('Profile saved');
+  }
+  function saveHealthEdits(){
+    USER.profile=USER.profile||{};
+    ['current','fasting','post','hba1c','walk','sleep'].forEach(k=>{const el=document.getElementById('hf_'+k); if(el) USER.profile[k]=+el.value;});
+    ['bp','smoke','alcohol'].forEach(k=>{const el=document.getElementById('hf_'+k); if(el) USER.profile[k]=el.value;});
+    const t=todayKey(); USER.logs.sugar[t]=USER.profile.current||USER.profile.fasting; USER.logs.hba1c[t]=USER.profile.hba1c;
+    persistUser(); checkEmergency(); toast('Health info updated'); renderDashboard();
+  }
+  function renderSettings(){
+    document.getElementById('pageSettings').innerHTML=`
+      <div class="glass p-4 mb-3">
+        <div class="section-title"><i class="bi bi-gear"></i> Settings</div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color:var(--border)!important">
+          <div><strong>Dark Mode</strong><div class="small text-muted-2">Switch between light and dark themes</div></div>
+          <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="setTheme" ${document.documentElement.getAttribute('data-theme')==='dark'?'checked':''} onchange="toggleTheme();this.checked=document.documentElement.getAttribute('data-theme')==='dark'"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color:var(--border)!important">
+          <div><strong>Browser Notifications</strong><div class="small text-muted-2">Enable reminder alerts</div></div>
+          <button class="btn btn-sm btn-brand" onclick="requestNotifyPermission(true)">Enable</button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color:var(--border)!important">
+          <div><strong>Add Today's Water</strong><div class="small text-muted-2">Quick add a glass (0.25 L)</div></div>
+          <button class="btn btn-sm btn-outline-secondary" onclick="addWater()">+ Glass</button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2">
+          <div class="text-danger"><strong>Reset All Data</strong><div class="small text-muted-2">Deletes your account & logs from this browser</div></div>
+          <button class="btn btn-sm btn-outline-danger" onclick="resetData()">Reset</button>
+        </div>
+      </div>
+      <div class="glass p-4">
+        <div class="section-title"><i class="bi bi-lightbulb"></i> Tips & Goals</div>
+        <p class="mb-1"><strong>Today's Tip:</strong> ${dailyTip()}</p>
+        <p class="mb-1"><strong>Weekly Tip:</strong> ${weeklyTip()}</p>
+        <p class="mb-0"><strong>Monthly Goal:</strong> ${monthlyGoal()}</p>
+      </div>`;
+  }
+  function addWater(){ const t=todayKey(); USER.logs.water[t]=+(((USER.logs.water[t]||0)+0.25).toFixed(2)); persistUser(); toast('Water added'); if(document.getElementById('pageDashboard').classList.contains('active')) renderDashboard(); }
+  function resetData(){ if(confirm('Delete all data and log out?')){ localStorage.clear(); location.reload(); } }
+
+  function toast(msg){
+    let el=document.getElementById('__toast'); if(!el){ el=document.createElement('div'); el.id='__toast';
+      el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--brand-grad);color:#fff;padding:10px 22px;border-radius:30px;z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:600';
+      document.body.appendChild(el);} el.textContent=msg; el.style.opacity='1';
+    clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',1800);
+  }
+
+  /* ===========================================================
+     NAVIGATION
+  =========================================================== */
+  const TITLES={dashboard:'Dashboard',diet:'Diet Planner',exercise:'Exercise Planner',alarms:'Smart Reminders',roadmap:'Reduction Roadmap',analytics:'Analytics',progress:'Progress',reports:'Reports',profile:'User Profile',settings:'Settings'};
+  function go(page){
+    document.querySelectorAll('.nav-link-side').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    const map={dashboard:'pageDashboard',diet:'pageDiet',exercise:'pageExercise',alarms:'pageAlarms',roadmap:'pageRoadmap',analytics:'pageAnalytics',progress:'pageProgress',reports:'pageReports',profile:'pageProfile',settings:'pageSettings'};
+    document.getElementById(map[page]).classList.add('active');
+    document.getElementById('pageTitle').textContent=TITLES[page];
+    ({dashboard:renderDashboard,diet:renderDiet,exercise:renderExercise,alarms:renderAlarms,roadmap:renderRoadmap,analytics:renderAnalytics,progress:renderProgress,reports:renderReports,profile:renderProfile,settings:renderSettings}[page])();
+    toggleSidebar(false);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function toggleSidebar(open){
+    const sb=document.getElementById('sidebar'), ov=document.getElementById('overlayBg');
+    if(open===undefined) open=!sb.classList.contains('open');
+    sb.classList.toggle('open',open); ov.classList.toggle('show',open);
+  }
+
+  /* ===========================================================
+     INIT
+  =========================================================== */
+  (function init(){
+    applyTheme(load(DB_THEME,'light'));
+    const key=load(DB_SESSION,null);
+    if(key){ const u=getUsers()[key]; if(u){ USER=u; if(!USER.logs) USER.logs=seedLogs(USER); USER.profile?enterApp():enterProfileSetup(); return; } }
+    document.getElementById('authScreen').style.display='flex';
+  })();
+  /* build: gigal-prayer-house diabetes-care-tracker */
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+	"appId": "com.gigalprayerhouse.diabetescare",
+	"appName": "Diabetes Care Tracker",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	}
+}
